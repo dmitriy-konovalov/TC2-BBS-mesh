@@ -97,7 +97,7 @@ def main():
             logging.info("Shutting down the server...")
             interface.close()
             if js8call_client.connected:
-            js8call_client.close()
+                js8call_client.close()
 
 if __name__ == "__main__":
     main()
