@@ -59,7 +59,7 @@ def main():
 
     merge_config(system_config, args)
 
-    logging.info(f"TC²-BBS is running on {system_config['interface_type']} interface...")
+
 
     initialize_database()
 
@@ -71,14 +71,19 @@ def main():
 
     isConnected = False
     aborted = False
-    def connection_lost():
+    interface = None
+    def connection_lost(interface):
+        logging.error(f"Connection lost: {interface}")
+        nonlocal isConnected
         isConnected = False
-    pub.subscribe(receive_packet, system_config['mqtt_topic'])
-    pub.subscribe(connection_lost, system_config['mqtt_topic_connection_lost'])
-
+        pub.unsubscribe(receive_packet, system_config['mqtt_topic'])
+        pub.unsubscribe(connection_lost, system_config['mqtt_topic_connection_lost'])
+        if interface:
+            interface.close()
     while not isConnected and not aborted:
         try:
             try:
+                logging.info(f"Establishing connection on {system_config['interface_type']} interface...")
                 interface = get_interface(system_config)
                 interface.bbs_nodes = system_config['bbs_nodes']
                 interface.allowed_nodes = system_config['allowed_nodes']
@@ -88,6 +93,11 @@ def main():
                 if js8call_client.db_conn:
                     js8call_client.connect()
                 isConnected = True
+                logging.info(f"TC²-BBS is running on {system_config['interface_type']} interface...")
+
+
+                pub.subscribe(receive_packet, system_config['mqtt_topic'])
+                pub.subscribe(connection_lost, system_config['mqtt_topic_connection_lost'])
                 while isConnected:
                     time.sleep(1)
             except Exception as e:
@@ -95,6 +105,8 @@ def main():
                 time.sleep(15)
         except KeyboardInterrupt:
             aborted = True
+            pub.unsubscribe(receive_packet, system_config['mqtt_topic'])
+            pub.unsubscribe(connection_lost, system_config['mqtt_topic_connection_lost'])
             logging.info("Shutting down the server...")
             interface.close()
             if js8call_client.connected:
