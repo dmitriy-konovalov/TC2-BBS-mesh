@@ -85,8 +85,8 @@ def main():
                 # Initialize and start JS8Call Client if configured
                 js8call_client = JS8CallClient(interface)
                 js8call_client.logger = js8call_logger
-    if js8call_client.db_conn:
-        js8call_client.connect()
+                if js8call_client.db_conn:
+                    js8call_client.connect()
                 isConnected = True
                 while isConnected:
                     time.sleep(1)
