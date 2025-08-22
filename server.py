@@ -66,12 +66,8 @@ def main():
     def receive_packet(packet, interface):
         on_receive(packet, interface)
 
-    # Initialize and start JS8Call Client if configured
-    js8call_client = JS8CallClient(interface)
-    js8call_client.logger = js8call_logger
 
-    if js8call_client.db_conn:
-        js8call_client.connect()
+
 
     isConnected = False
     aborted = False
@@ -86,6 +82,11 @@ def main():
                 interface = get_interface(system_config)
                 interface.bbs_nodes = system_config['bbs_nodes']
                 interface.allowed_nodes = system_config['allowed_nodes']
+                # Initialize and start JS8Call Client if configured
+                js8call_client = JS8CallClient(interface)
+                js8call_client.logger = js8call_logger
+    if js8call_client.db_conn:
+        js8call_client.connect()
                 isConnected = True
                 while isConnected:
                     time.sleep(1)
