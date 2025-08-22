@@ -59,10 +59,6 @@ def main():
 
     merge_config(system_config, args)
 
-    interface = get_interface(system_config)
-    interface.bbs_nodes = system_config['bbs_nodes']
-    interface.allowed_nodes = system_config['allowed_nodes']
-
     logging.info(f"TC²-BBS is running on {system_config['interface_type']} interface...")
 
     initialize_database()
@@ -70,24 +66,38 @@ def main():
     def receive_packet(packet, interface):
         on_receive(packet, interface)
 
-    pub.subscribe(receive_packet, system_config['mqtt_topic'])
-
-    # Initialize and start JS8Call Client if configured
+	# Initialize and start JS8Call Client if configured
     js8call_client = JS8CallClient(interface)
     js8call_client.logger = js8call_logger
 
     if js8call_client.db_conn:
         js8call_client.connect()
 
-    try:
-        while True:
-            time.sleep(1)
+	isConnected = False
+	aborted = False
+	def connection_lost():
+		isConnected = False
+	pub.subscribe(receive_packet, system_config['mqtt_topic'])
+	pub.subscribe(connection_lost, system_config['mqtt_topic_connection_lost'])
 
-    except KeyboardInterrupt:
-        logging.info("Shutting down the server...")
-        interface.close()
-        if js8call_client.connected:
-            js8call_client.close()
+	while not isConnected and not aborted:
+		try:
+			try:
+				interface = get_interface(system_config)
+				interface.bbs_nodes = system_config['bbs_nodes']
+				interface.allowed_nodes = system_config['allowed_nodes']
+				isConnected = True
+				while isConnected:
+					time.sleep(1)
+			except Exception as e:
+				logging.error(f"Error initializing interface: {e}")
+				time.sleep(15)
+		except KeyboardInterrupt:
+			aborted = True
+			logging.info("Shutting down the server...")
+			interface.close()
+			if js8call_client.connected:
+			js8call_client.close()
 
 if __name__ == "__main__":
     main()

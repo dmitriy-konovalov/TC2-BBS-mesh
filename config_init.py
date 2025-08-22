@@ -15,49 +15,49 @@ def init_cli_parser() -> argparse.Namespace:
         argparse.ArgumentParser: Argparse namespace with processed CLI args
     """
     parser = argparse.ArgumentParser(description="Meshtastic BBS system")
-    
+
     parser.add_argument(
         "--config", "-c",
         action="store",
         help="System configuration file",
         default=None)
-    
+
     parser.add_argument(
         "--interface-type", "-i",
         action="store",
         choices=['serial', 'tcp'],
         help="Node interface type",
         default=None)
-    
+
     parser.add_argument(
         "--port", "-p",
         action="store",
         help="Serial port",
         default=None)
-    
+
     parser.add_argument(
-        "--host", 
+        "--host",
         action="store",
         help="TCP host address",
         default=None)
-    
+
     parser.add_argument(
-        "--mqtt-topic", '-t', 
+        "--mqtt-topic", '-t',
         action="store",
         help="MQTT topic to subscribe",
         default='meshtastic.receive')
     #
     # Add extra arguments here
     #...
-    
+
     args = parser.parse_args()
-    
+
     return args
-    
-    
+
+
 def merge_config(system_config:dict[str, Any], args:argparse.Namespace) -> dict[str, Any]:
     """Function merges configuration read from the config file and provided on the CLI.
-    
+
     CLI arguments override values defined in the config file.
     system_config argument is mutated by the function.
 
@@ -68,16 +68,16 @@ def merge_config(system_config:dict[str, Any], args:argparse.Namespace) -> dict[
     Returns:
         dict[str, Any]: system config dict with merged configurations
     """
-    
+
     if args.interface_type is not None:
         system_config['interface_type'] = args.interface_type
-        
+
     if args.port is not None:
         system_config['port'] = args.port
-        
+
     if args.host is not None:
         system_config['hostname'] = args.host
-    
+
     return system_config
 
 
@@ -127,7 +127,8 @@ def initialize_config(config_file: str = None) -> dict[str, Any]:
         'port': port,
         'bbs_nodes': bbs_nodes,
         'allowed_nodes': allowed_nodes,
-        'mqtt_topic': 'meshtastic.receive'
+        'mqtt_topic': 'meshtastic.receive',
+        'mqtt_topic_connection_lost': 'meshtastic.connection.lost'
     }
 
 
@@ -135,7 +136,7 @@ def initialize_config(config_file: str = None) -> dict[str, Any]:
 def get_interface(system_config:dict[str, Any]) -> meshtastic.stream_interface.StreamInterface:
     """
     Function opens and returns an instance meshtastic interface of type specified by the configuration
-    
+
     Function creates and returns an instance of a class inheriting from meshtastic.stream_interface.StreamInterface.
     The type of the class depends on the type of the interface specified by the system configuration.
     For 'serial' interfaces, function returns an instance of meshtastic.serial_interface.SerialInterface,
